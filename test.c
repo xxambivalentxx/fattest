@@ -27,7 +27,6 @@ uint32_t cluster_to_sector(uint32_t rel_start_clust, uint32_t clust_num, uint32_
  * @
  */
 struct fs_info {
-	/* both relative_start_cluster/sector are relative to the start of the partition */
 	uint8_t			fs_type;					/* defined as FS_TYPE_XX */
 	uint32_t		fat_start_sector;
 	uint32_t		root_dir_cluster;
@@ -60,7 +59,17 @@ int main() {
 		fseek(fp, MBR_OFFSET, SEEK_SET);
 		fread(&fpt, sizeof(struct fat_partition), 1, fp);
 		
-		
+		/* TODO
+		 * let's learn LFN - also, look at changing ATTRB_XXX bullshit
+		 * maybe even enums?  meh
+		 * add some sector, cluster love to this
+		 * fs_info
+		 * find a new name?
+		 * maybe the data sectors?
+		 * who knows
+		 * root_cluster - dunno if it is worth to have.
+		 * bytes per sector more likely is not useful
+		 */
 		/* it looks like you just slap high/low together to get the first cluster? hum-ho */
 		
 		
