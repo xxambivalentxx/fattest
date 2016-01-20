@@ -5,13 +5,13 @@
 #define MBR_OFFSET	0x1BE /* this might not be named correctly */
 
 /* dir_entry attributes */
-#define ATTRB_READ_ONLY 0x1
-#define ATTRB_HIDDEN	0x2
-#define ATTRB_SYSTEM	0x4
-#define ATTRB_VOLUME_ID	0x8
-#define ATTRB_DIRECTORY	0x10
-#define ATTRB_ARCHIVE	0x20	/* this is a file */
-#define ATTRB_LFN		ATTRB_READ_ONLY | ATTRB_HIDDEN | ATTRB_SYSTEM | ATTRB_VOLUME_ID
+#define ATTR_READ_ONLY			0x1
+#define ATTR_HIDDEN				0x2
+#define ATTR_SYSTEM				0x4
+#define ATTR_VOLUME_ID			0x8
+#define ATTR_DIRECTORY			0x10
+#define ATTR_ARCHIVE			0x20	/* file */
+#define ATTR_LFN				ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID
 
 /* first sector, LBA = 0 */
 /* FAT_PART_16_SMALL is < 32MiB */
