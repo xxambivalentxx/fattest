@@ -24,7 +24,7 @@ uint32_t cluster_to_sector(uint32_t rel_start_clust, uint32_t clust_num, uint32_
  * File System Information
  * 
  * Used to hold relevant file system information
- * @
+ * @test
  */
 struct fs_info {
 	/* both relative_start_cluster/sector are relative to the start of the partition */
