@@ -1,8 +1,18 @@
 #ifndef FAT32_H
 #define FAT32_H
 #include <stdint.h>
+// READ_ONLY=0x01 HIDDEN=0x02 SYSTEM=0x04 VOLUME_ID=0x08 DIRECTORY=0x10 ARCHIVE=0x20 LFN=READ_ONLY|HIDDEN|SYSTEM|VOLUME_ID
+#define MBR_OFFSET	0x1BE /* this might not be named correctly */
 
-#define FAT_PARTITION_OFFSET	0x1BE
+/* dir_entry attributes */
+#define ATTRB_READ_ONLY 0x1
+#define ATTRB_HIDDEN	0x2
+#define ATTRB_SYSTEM	0x4
+#define ATTRB_VOLUME_ID	0x8
+#define ATTRB_DIRECTORY	0x10
+#define ATTRB_ARCHIVE	0x20	/* this is a file */
+#define ATTRB_LFN		ATTRB_READ_ONLY | ATTRB_HIDDEN | ATTRB_SYSTEM | ATTRB_VOLUME_ID
+
 /* first sector, LBA = 0 */
 /* FAT_PART_16_SMALL is < 32MiB */
 /* FAT_PART_32_SMALL is < 2GiB  */
@@ -11,10 +21,10 @@
 #define FAT_TYPE_FAT12			1
 #define FAT_TYPE_FAT16_SMALL	4
 #define FAT_TYPE_EXT			5
-#define FAT_TYPE_16_NO_LBA		6
+#define FAT_TYPE_16				6
 #define FAT_TYPE_32_SMALL		11
 #define FAT_TYPE_32				12
-#define FAT_TYPE_16				14
+#define FAT_TYPE_16_LBA			14
 #define FAT_TYPE_EXT_LBA		15
 /**
  * @fat_bpb
@@ -140,6 +150,21 @@ struct fat_partition {
 	uint32_t	size;
 } __attribute__ ((packed));
 
+/**
+ * dir_entry
+ * 
+ * entry within a directory
+ * 
+ * @entry_name				technically 11 bytes, split between ext.  padded if shorter than 11 bytes
+ * @ext						file extension
+ * @attrb					entry attributes
+ * @win_nt_reserved			are we on windows nt? no? STFU
+ * @creation_time_tenths	creation time for tenths of seconds (who the fuck knows why?)
+ * @creation_time			entry creation time; format, 5:6:5, hours:minutes:seconds
+ * @creation_date			entry creation date; format, 7:4:5, year:month:day
+ * @last_access_date		same format as creation_date
+ * @cluster_high			location 
+ */
 struct dir_entry {
 	uint8_t		entry_name[8];
 	uint8_t		ext[3];

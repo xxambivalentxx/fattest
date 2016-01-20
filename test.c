@@ -19,6 +19,12 @@ uint32_t cluster_to_sector(uint32_t rel_start_clust, uint32_t clust_num, uint32_
 	return rel_start_clust + (clust_num - 2) * sect_per_clust;
 }
 /**
+ * fs_info
+ * 
+ * File System Information
+ * 
+ * Used to hold relevant file system information
+ * @
  */
 struct fs_info {
 	/* both relative_start_cluster/sector are relative to the start of the partition */
@@ -51,8 +57,12 @@ int main() {
 		/* "fat_size" is either bpb.sectors_per_fat16 if fat16 or extbpb.sectors_per_fat */
 		unsigned int fat_size = 0;
 		
-		fseek(fp, FAT_PARTITION_OFFSET, SEEK_SET);
+		fseek(fp, MBR_OFFSET, SEEK_SET);
 		fread(&fpt, sizeof(struct fat_partition), 1, fp);
+		
+		
+		/* it looks like you just slap high/low together to get the first cluster? hum-ho */
+		
 		
 		/* calculate next offset */
 		fseek(fp, GENERIC_SECTOR_SIZE * fpt.start_sector, SEEK_SET);
@@ -67,7 +77,7 @@ int main() {
 		fs.root_dir_cluster			= fpt.start_sector + extbpb.bpb.reserved_sector_cnt + (extbpb.bpb.table_cnt * fs.sectors_per_fat);
 		
 		/* relative_start_sector should be the fat sector? if this is the case, we should see a reference in slot #2 of nada (0xFFFFFFFF?) */
-		fseek(fp, fs.bytes_per_sector * fs.relative_start_sector, SEEK_SET);
+		fseek(fp, fs.bytes_per_sector * fs.fat_start_sector, SEEK_SET);
 		unsigned int table[512];
 		fread(&table, 4 * 512, 1, fp);
 		for (int i = 0; i < 5; i++) {
@@ -75,16 +85,16 @@ int main() {
 		}
 		
 		printf("[0x98]: 0x%x\n", table[0x98]);
-		fseek(fp, cluster_to_sector(fs.relative_start_cluster, fs.root_cluster, fs.sectors_per_cluster) * fs.bytes_per_sector, SEEK_SET);
+		fseek(fp, cluster_to_sector(fs.root_dir_cluster, fs.root_cluster, fs.sectors_per_cluster) * fs.bytes_per_sector, SEEK_SET);
 		
-		for (int i = 0; i < 5; i++) {
-			fread(&fe, sizeof(struct fat_entry), 1, fp);
+		for (int i = 0; i < 24; i++) {
+			fread(&de, sizeof(struct dir_entry), 1, fp);
 	
-			printf("[%s].[%s]\n", fe.entry_name, fe.ext);
-			printf("attb: 0%x\n", fe.attrb);
-			printf("size: %i\n", fe.size);
-			printf("high: 0x%x\n", fe.cluster_high);
-			printf("low: 0x%x\n", fe.cluster_low);
+			printf("[%s].[%s]\n", de.entry_name, de.ext);
+			printf("attb: 0%x\n", de.attrb);
+			printf("size: %i\n", de.size);
+			printf("high: 0x%x\n", de.cluster_high);
+			printf("low: 0x%x\n", de.cluster_low);
 			
 			/* first fat sector is after reserved sectors? first_fat_sector = extbpb.bpb.reserved_sector_cnt 
 			* Every sector of of the FAT holds 128 of these 32 bit integers, so looking up the next 
@@ -94,7 +104,7 @@ int main() {
 		}
 		
 		printf("gonna try and read text\n");
-		fseek(fp, cluster_to_sector(fs.relative_start_cluster, 0x98, fs.sectors_per_cluster) * fs.bytes_per_sector, SEEK_SET);
+		fseek(fp, cluster_to_sector(fs.root_dir_cluster, 0x98, fs.sectors_per_cluster) * fs.bytes_per_sector, SEEK_SET);
 		char test[33];
 		fread(&test, 32, 1, fp);
 		test[32] = '\0';
