@@ -1,8 +1,9 @@
 #ifndef FAT32_H
 #define FAT32_H
 #include <stdint.h>
-// READ_ONLY=0x01 HIDDEN=0x02 SYSTEM=0x04 VOLUME_ID=0x08 DIRECTORY=0x10 ARCHIVE=0x20 LFN=READ_ONLY|HIDDEN|SYSTEM|VOLUME_ID
-#define MBR_OFFSET	0x1BE /* this might not be named correctly */
+
+#define MBR_SECTOR_SIZE	512
+#define MBR_OFFSET		0x1BE /* this might not be named correctly */
 
 /* dir_entry attributes */
 #define ATTR_READ_ONLY			0x1
