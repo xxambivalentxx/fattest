@@ -36,10 +36,7 @@ int read_sector(FILE *fp, uint8_t *buf, uint32_t sector, uint32_t bytes_per_sect
 	
 	return ret;
 }
-	
-	
-	
-	
+
 /**
  * fs_info
  * 
@@ -131,6 +128,9 @@ int main() {
 					printf("size: %i\n", fpt->size);
 					
 					/* now, do some other works */
+					fseek(fp, GENERIC_SECTOR_SIZE * fpt->start_sector, SEEK_SET);
+					fread(&extbpb, sizeof(struct fat32_extbpb), 1, fp);
+					printf("bytes_per_sector: %i\n", extbpb.bpb.bytes_per_sector);
 				}
 				
 				printf("\n");
