@@ -27,6 +27,74 @@
 #define FAT_TYPE_32				12
 #define FAT_TYPE_16_LBA			14
 #define FAT_TYPE_EXT_LBA		15
+
+/**
+ * fat16_ebpb
+ * 
+ * Fat16 Extended Bios Parameter Block
+ * 
+ * @bpb					Bios Parameter Block
+ * @drive_number		0x13 floppy, 0x80 hdd
+ * @win_nt_flags		can be ignored
+ * @signature			must be 0x28/0x29
+ * @volumeid_serial		volume id 'serial' number; can be ignored
+ * @volume_label		label of the volume/partition
+ * @system_id			can be ignored?
+ * @boot_code			boot code stuff
+ * @boot_signature		must be 0xAA55
+ **/
+struct fat16_extbpb {
+	uint8_t			drive_number;
+	uint8_t			win_nt_flags;
+	uint8_t			signature;
+	uint32_t		volumeid_serial;
+	uint8_t			volume_label[11];
+	uint8_t			system_id[8];
+	uint8_t			boot_code[448];
+	uint16_t		bootable_signature;
+} __attribute__ ((packed));
+	
+
+/**
+ * fat32_ebpb
+ * 
+ * Fat32 Extended Bios Parameter Block
+ * 
+ * @bpb						Bios Parameter Block
+ * @sectors_per_fat			size of file allocation table in sectors
+ * @flags				
+ * @version					high bytes is major, low byte is minor
+ * @root_dir_cluster_number	cluster number of root directory
+ * @fs_info_sector			sector number of fsinfo structure
+ * @backup_boot_sector		sector number of backup boot sector
+ * @reserved
+ * @drive_number			0x13 floppy, 0x80 hdd
+ * @win_nt_flags			can be ignored
+ * @signature				must 0x28/0x29
+ * @volumeid_serial			volume id 'serial' number; can be ignored
+ * @volume_label			volume label string
+ * @system_id				system_id, generally states "FAT32" can be ignored?
+ * @boot_code				boot code stuff
+ * @bootable_signature		always 0xAA55
+ **/
+struct fat32_extbpb {
+	uint32_t			sectors_per_fat;	
+	uint16_t			flags;
+	uint8_t				version[2];
+	uint32_t			root_cluster;
+	uint16_t			fs_info_sector;			
+	uint16_t			backup_boot_sector;
+	uint8_t				reserved[12];
+	uint8_t				drive_number;
+	uint8_t				win_nt_flags;			/* disregard */
+	uint8_t				signature;				/* must be 0x28/0x29 */ 
+	uint32_t			volumeid_serial;		
+	uint8_t				volume_label[11];
+	uint8_t				system_id[8];
+	uint8_t				boot_code[420];
+	uint16_t			bootable_signature;		/* 0xAA55 */
+} __attribute__ ((packed));
+
 /**
  * @fat_bpb
  * 
@@ -62,75 +130,10 @@ struct fat_bpb {
 	uint16_t	heads_sides_cnt;		/* number of heads/sides (dunno) */
 	uint32_t	hidden_sector_cnt;
 	uint32_t	large_total_sector_cnt;	/* refer here if total_sectors is 0. */
-} __attribute__ ((packed));
-
-/**
- * fat16_ebpb
- * 
- * Fat16 Extended Bios Parameter Block
- * 
- * @bpb					Bios Parameter Block
- * @drive_number		0x13 floppy, 0x80 hdd
- * @win_nt_flags		can be ignored
- * @signature			must be 0x28/0x29
- * @volumeid_serial		volume id 'serial' number; can be ignored
- * @volume_label		label of the volume/partition
- * @system_id			can be ignored?
- * @boot_code			boot code stuff
- * @boot_signature		must be 0xAA55
- **/
-struct fat16_extbpb {
-	struct fat_bpb 	bpb;
-	uint8_t			drive_number;
-	uint8_t			win_nt_flags;
-	uint8_t			signature;
-	uint32_t		volumeid_serial;
-	uint8_t			volume_label[11];
-	uint8_t			system_id[8];
-	uint8_t			boot_code[448];
-	uint16_t		bootable_signature;
-} __attribute__ ((packed));
-	
-
-/**
- * fat32_ebpb
- * 
- * Fat32 Extended Bios Parameter Block
- * 
- * @bpb						Bios Parameter Block
- * @sectors_per_fat			size of file allocation table in sectors
- * @flags				
- * @version					high bytes is major, low byte is minor
- * @root_dir_cluster_number	cluster number of root directory
- * @fs_info_sector			sector number of fsinfo structure
- * @backup_boot_sector		sector number of backup boot sector
- * @reserved
- * @drive_number			0x13 floppy, 0x80 hdd
- * @win_nt_flags			can be ignored
- * @signature				must 0x28/0x29
- * @volumeid_serial			volume id 'serial' number; can be ignored
- * @volume_label			volume label string
- * @system_id				system_id, generally states "FAT32" can be ignored?
- * @boot_code				boot code stuff
- * @bootable_signature		always 0xAA55
- **/
-struct fat32_extbpb {
-	struct fat_bpb		bpb;
-	uint32_t			sectors_per_fat;	
-	uint16_t			flags;
-	uint8_t				version[2];
-	uint32_t			root_cluster;
-	uint16_t			fs_info_sector;			
-	uint16_t			backup_boot_sector;
-	uint8_t				reserved[12];
-	uint8_t				drive_number;
-	uint8_t				win_nt_flags;			/* disregard */
-	uint8_t				signature;				/* must be 0x28/0x29 */ 
-	uint32_t			volumeid_serial;		
-	uint8_t				volume_label[11];
-	uint8_t				system_id[8];
-	uint8_t				boot_code[420];
-	uint16_t			bootable_signature;		/* 0xAA55 */
+	union {
+		struct fat16_extbpb	fat16;
+		struct fat32_extbpb	fat32;
+	};
 } __attribute__ ((packed));
 
 /**
@@ -142,10 +145,10 @@ struct fat32_extbpb {
  * @start_sector	starting sector of partition
  * @size			size (in sectors) of partition
  **/
-struct fat_partition {
+struct mbr_entry {
 	uint8_t		boot_flag;
 	uint8_t		start_chs[3];
-	uint8_t		type;
+	uint8_t		type_code;
 	uint8_t		end_chs[3];
 	uint32_t	start_sector;
 	uint32_t	size;
