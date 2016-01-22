@@ -8,15 +8,14 @@ static FILE *fp = NULL;
 
 
 struct fat_info {
-	/* both relative_start_cluster/sector are relative to the start of the partition */
 	uint8_t			type;						/* defined as FS_TYPE_XX */
 	uint16_t		bytes_per_sector;	
 	uint32_t		first_cluster;
 	uint32_t		first_sector;
 	uint32_t		first_fat_sector;
 	uint32_t		root_dir_sector;
-	uint32_t		sectors_per_fat;			/* can be pull directly from structure */
-	uint32_t		sectors_per_cluster;		/* can be pull directly from structure */
+	uint32_t		sectors_per_fat;		
+	uint32_t		sectors_per_cluster;		
 };
 
 /**
@@ -44,7 +43,7 @@ static bool is_fat16(uint8_t type_code) {
 }
 
 /**
- * is_supported_fat
+ * is_supported_version
  * 
  * @type_code	type received (generally) from MBR
  * 
@@ -54,7 +53,7 @@ bool is_supported_version(uint8_t type_code) {
 	return (is_fat32(type_code) || is_fat16(type_code));
 }
 
-/* offering up some "host" functionality */
+/* offering up some "host" (lawl) functionality */
 int read_sectors(uint32_t sector_start, size_t cnt, uint8_t *buf) {
 	int ret = 0;
 	
@@ -80,8 +79,6 @@ int read_sectors(uint32_t sector_start, size_t cnt, uint8_t *buf) {
 int gen_fat_info(struct fat_info *fti, struct mbr_entry mbe) {
 	int ret = 0;
 	struct fat_bpb bpb;
-	
-	bpb.fat32.bootable_signature = 0xAA55;
 	
 	if ((ret = read_sectors(mbe.start_sector, 1, (uint8_t *)&bpb)) == 0) { // read the bpb 
 		if (is_supported_version(mbe.type_code)) {

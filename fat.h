@@ -124,9 +124,9 @@ struct fat_bpb {
 	uint8_t		table_cnt;				/* number of File Allocation Tables */
 	uint16_t	dir_entries_cnt;		/* number of directory entries, disregard on fat32 */
 	uint16_t	total_sector_cnt;		/* refer to larger entry if zero */
-	uint8_t		media_descriptor_type;	/* whaddafuck? */
+	uint8_t		media_descriptor_type;	/* whaddafook? */
 	uint16_t	sectors_per_fat16;		/* reserved for fat12/16 */
-	uint16_t	sectors_per_track;		/* whaddafuck? */
+	uint16_t	sectors_per_track;		/* whaddafook? */
 	uint16_t	heads_sides_cnt;		/* number of heads/sides (dunno) */
 	uint32_t	hidden_sector_cnt;
 	uint32_t	large_total_sector_cnt;	/* refer here if total_sectors is 0. */
