@@ -1,9 +1,10 @@
 #ifndef FAT32_H
 #define FAT32_H
 #include <stdint.h>
-
+#include <stddef.h>
+#include <stdbool.h>
 #define MBR_SECTOR_SIZE	512
-#define MBR_OFFSET		0x1BE /* this might not be named correctly */
+#define MBR_OFFSET		0x1BE // this might not be named correctly
 
 /* dir_entry attributes */
 #define ATTR_READ_ONLY			0x1
@@ -12,12 +13,9 @@
 #define ATTR_VOLUME_ID			0x8
 #define ATTR_DIRECTORY			0x10
 #define ATTR_ARCHIVE			0x20	/* file */
-#define ATTR_LFN				ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID
+#define ATTR_LFN				(ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID)
 
-/* first sector, LBA = 0 */
-/* FAT_PART_16_SMALL is < 32MiB */
-/* FAT_PART_32_SMALL is < 2GiB  */
-/* think we'll only support FAT_PART_16/32_LBA */
+// think we'll only support FAT_TYPE_16/32
 #define FAT_TYPE_UNUSED			0
 #define FAT_TYPE_FAT12			1
 #define FAT_TYPE_FAT16_SMALL	4
@@ -28,6 +26,9 @@
 #define FAT_TYPE_16_LBA			14
 #define FAT_TYPE_EXT_LBA		15
 
+// lfn, last entry in sequence
+#define LFN_LAST_ENTRY			0x40
+#define CHARS_PER_ENTRY			13
 /**
  * fat16_ebpb
  * 
@@ -147,8 +148,7 @@ struct fat_bpb {
  **/
 struct mbr_entry {
 	uint8_t		boot_flag;
-	uint8_t		start_chs[3];
-	uint8_t		type_code;
+	uint8_t		start_chs[3];l
 	uint8_t		end_chs[3];
 	uint32_t	start_sector;
 	uint32_t	size;
@@ -159,20 +159,19 @@ struct mbr_entry {
  * 
  * entry within a directory
  * 
- * @entry_name				technically 11 bytes, split between ext.  padded if shorter than 11 bytes
+ * @short_fname				short file name
  * @ext						file extension
  * @attrb					entry attributes
  * @win_nt_reserved			are we on windows nt? no? STFU
- * @creation_time_tenths	creation time for tenths of seconds (who the fuck knows why?)
+ * @creation_time_tenths	creation time for tenths of seconds 
  * @creation_time			entry creation time; format, 5:6:5, hours:minutes:seconds
  * @creation_date			entry creation date; format, 7:4:5, year:month:day
  * @last_access_date		same format as creation_date
  * @cluster_high			location 
  */
 struct dir_entry {
-	uint8_t		entry_name[8];
-	uint8_t		ext[3];
-	uint8_t		attrb;
+	uint8_t		short_fname[11];
+	uint8_t		attr;
 	uint8_t		win_nt_reserved;
 	uint8_t		creation_time_tenths;
 	uint16_t	creation_time;			/* hour:minutes:seconds, 5b:6b:5b */
@@ -185,4 +184,53 @@ struct dir_entry {
 	uint32_t	size;
 } __attribute__ ((packed));
 
+/**
+ * lfn_entry
+ * 
+ * long file name entry
+ * 
+ * this is a structure for the lfn_entry with fat - it is a hacky piece
+ * of garbage and I curse the person who devised it.
+ * 
+ * @seq_num			sequence number of entry
+ * @first_nchars	first 5 ucs-2 characters of file name
+ * @attr			always 0xF
+ * @type			always 0x0
+ * @checksum		checksum of entry
+ * @next_nchars		next 6 ucs-2 characters of file name
+ * @first_cluster	always 0x0
+ * @last_nchars		last 2 ucs-2 characters of file name
+ **/
+struct lfn_entry {
+	uint8_t		seq_num;			
+	uint16_t	first_nchars[5];
+	uint8_t		attr;				
+	uint8_t		type;				
+	uint8_t		checksum;			
+	uint16_t	next_nchars[6];	
+	uint16_t	first_cluster;		
+	uint16_t	last_nchars[2];
+} __attribute__ ((packed));
+
+/**
+ * just a dumbshit structure thrown together
+ */
+struct fat_info {
+	uint8_t			type;						/* defined as FS_TYPE_XX */
+	uint16_t		bytes_per_sector;	
+	uint32_t		first_cluster;
+	uint32_t		first_sector;
+	uint32_t		first_fat_sector;
+	uint32_t		root_dir_sector;
+	uint32_t		sectors_per_fat;		
+	uint32_t		sectors_per_cluster;		
+};
+
+/* some functions */
+bool is_supported_version(uint8_t type_code);
+bool is_fat_16(uint8_t type_code);
+bool is_fat_32(uint8_t type_code);
+uint32_t clust_to_sect(uint32_t start_clust, uint32_t clust_num, uint32_t sect_per_clust);
+int lfn_strlen(struct dir_entry *de, size_t *size);
+int lfn_read_fname(struct dir_entry *de, char *str);
 #endif
